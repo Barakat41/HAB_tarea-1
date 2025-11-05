@@ -1,2 +1,6 @@
-
+biopython
+requests
+pandas
+goatools
+mygene
 
