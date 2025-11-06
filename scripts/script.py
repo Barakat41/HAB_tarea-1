@@ -17,6 +17,7 @@ import mygene
 import certifi
 import ssl
 
+# Fix para conexión en local por error de certificados
 os.environ.setdefault('SSL_CERT_FILE', certifi.where())
 # -----------------------
 # Utilidades
