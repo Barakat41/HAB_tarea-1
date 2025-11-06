@@ -36,12 +36,14 @@ def read_genes_from_file(filename):
 # -----------------------
 # Funciones
 # -----------------------
-def bio_python(gene_list, email: str = "testing@uma.es"):
+def bio_python(gene_list, email: str = "testing@uma.es", out_base="result"):
     """
-    input_file: Ruta al fichero con la lista de genes
-    email: correo requerido por NCBI Entrez
+    Consulta anotaciones de genes con Biopython (Entrez) y guarda CSV
+    gene_list : lista de símbolos génicos (ej. ['COX4I2','ND1','ATP6'])
+    email : email para Entrez (requerido por NCBI)
+    out_base : base del nombre de archivo de salida (sin extensión)
     """
-    output_file = os.path.join("results", "gene_annotations.txt")
+    output_file = os.path.join("results", f"{out_base or 'result'}_bio_python.txt")
 
     Entrez.email = email
 
@@ -83,15 +85,16 @@ def bio_python(gene_list, email: str = "testing@uma.es"):
 
     print(f"\nAll results saved to '{output_file}'.")
 
-def goaTools(gene_list, fdr_value=0.05):
+def goaTools(gene_list, fdr_value=0.05, out_base="result"):
     """
     Ejecuta un análisis de enriquecimiento GO usando GOATOOLS.
     gene_list : lista de símbolos génicos (ej. ['COX4I2','ND1','ATP6'])
     fdr_value : umbral de FDR para filtrar resultados/significancia (float)
+    out_base : base del nombre de archivo de salida (sin extensión)
     """
 
-    out_csv = os.path.join("results", "go_enrichment_results.csv")
-    out_txt = os.path.join("results", "go_enrichment.txt")
+    out_csv = os.path.join("results", f"{out_base or 'result'}_go_enrichment.csv")
+    out_txt = os.path.join("results", f"{out_base or 'result'}_go_enrichment.txt")
 
     # --- Descarga / comprobación de archivos GO y GAF ---
     obo_url = "http://current.geneontology.org/ontology/go-basic.obo"
@@ -303,10 +306,13 @@ def goaTools(gene_list, fdr_value=0.05):
     # breve pausa para evitar saturar APIs si hay llamadas posteriores en el pipeline
     time.sleep(0.5)
 
-def stringDB(proportioned_genes, fdr_value=0.05):
+def stringDB(gene_list, fdr_value=0.05, out_base="result"):
     """
     Realiza un análisis de enriquecimiento funcional utilizando la API de STRINGdb
-    para una lista de genes dada, y guarda los resultados en results/stringdb_results.csv.
+    para una lista de genes dada, y guarda los resultados
+    gene_list : lista de símbolos génicos (ej. ['COX4I2','ND1','ATP6'])
+    fdr_value : umbral de FDR para filtrar resultados/significancia (float)
+    out_base : base del nombre de archivo de salida (sin extensión)
     """
 
     # URL de la API de STRINGdb y detalles del método
@@ -318,7 +324,7 @@ def stringDB(proportioned_genes, fdr_value=0.05):
     request_url = "/".join([string_api_url, output_format, method])
 
     # Genes para usar en el análisis de enriquecimiento funcional
-    genes = proportioned_genes
+    genes = gene_list
 
     # Definir los parámetros para la solicitud
     params = {
@@ -365,7 +371,7 @@ def stringDB(proportioned_genes, fdr_value=0.05):
 
     # Guardar resultados en CSV
     os.makedirs("results", exist_ok=True)
-    out_csv = os.path.join("results", "stringdb_results.csv")
+    out_csv = os.path.join("results", f"{out_base or 'result'}_stringdb.csv")
 
     if results:
         df = pd.DataFrame(results)
@@ -378,25 +384,33 @@ def stringDB(proportioned_genes, fdr_value=0.05):
 # -----------------------
 # CLI
 # -----------------------
+
+def parse_args():
+    """
+    Parseo de argumentos de ejecución
+    """
+    parser = argparse.ArgumentParser(description="Fetch gene annotations from NCBI using Biopython Entrez")
+    parser.add_argument("-i", "--input", type=Path, required=True,help="Path to input file with gene symbols in one line, separated by commas.")
+    parser.add_argument("--email", type=str, default="test@correo.es", help="Email to set for Entrez (required by NCBI).")
+    parser.add_argument("-o", "--out", help="Output files base names (will be added function name to this name) saved in results dir", default=None)
+    return parser.parse_args()
+
 def cli():
-    p = argparse.ArgumentParser(description="Fetch gene annotations from NCBI using Biopython Entrez")
-    p.add_argument("input_file", type=Path, help="Path to input file with gene symbols (one or many per line).")
-    p.add_argument("--email", type=str, default="your_email@example.com", help="Email to set for Entrez (required by NCBI).")
-    args = p.parse_args()
+    args = parse_args()
     
-    if not args.input_file.exists():
-        print(f"Input file '{args.input_file}' not found.")
+    if not args.input.exists():
+        print(f"Input file '{args.input}' not found.")
         return
     
     # --- Preparar carpeta results ---
     os.makedirs("results", exist_ok=True)
 
-    genes = read_genes_from_file(args.input_file)
+    genes = read_genes_from_file(args.input)
     print(f"Genes read: {genes}")
     if genes:
-        bio_python(genes, email=args.email)
-        goaTools(genes, fdr_value=0.05)
-        stringDB(genes, fdr_value=0.05)
+        bio_python(genes, email=args.email, out_base=args.out)
+        goaTools(genes, fdr_value=0.05, out_base=args.out)
+        stringDB(genes, fdr_value=0.05, out_base=args.out)
 
 if __name__ == "__main__":
     cli()

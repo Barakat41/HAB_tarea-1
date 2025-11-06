@@ -47,3 +47,39 @@ gprofiler-official
 pandas
 ```
 
+## Ejecución de la solución
+
+* Instalación de dependencias: 
+```
+pip install -r requirements.txt
+```
+---
+
+* Ejemplo de ejecución del script:
+```
+python .\scripts\script.py -i .\data\genes_input.txt --email usuario@correo.es -o resultados
+```
+---
+
+* Parámetros de ejecución:
+
+| Parámetro | Descripción | Valor por defecto | Ejemplo |
+| --------------- | ---------------------------------------------------------------------------------- | ----------------- | ----------------------------- |
+| `-i`, `--input` |  Ruta del archivo con los genes a analizar (en una sola línea, separados por comas) | — | `-i data/genes_input.txt` |
+| `--email` | Correo electrónico obligatorio para las consultas a NCBI (Entrez) | — | `--email usuario@correo.es` |
+| `-o`, `--out` | Nombre base para los archivos de salida (se añadirán sufijos de cada función) | `results` | `-o results` |
+
+---
+
+* Salida:
+El script genera automáticamente la carpeta results/ (si no existe) y guarda los resultados de cada módulo con nombres coherentes:
+
+| Archivo                      | Descripción                                                                  |
+| ---------------------------- | ---------------------------------------------------------------------------- |
+| `results/{out}_bio_python.txt`    | Anotaciones de los genes obtenidas con **Biopython (Entrez)**                |
+| `results/{out}_go_enrichment.csv` | Resultados estructurados del análisis de enriquecimiento GO con **GOATOOLS** |
+| `results/{out}_go_enrichment.txt` | Resumen legible del enriquecimiento GO                                       |
+| `results/{out}_stringdb.csv`      | Resultados del análisis de enriquecimiento funcional con **STRINGdb**        |
+
+---
+
